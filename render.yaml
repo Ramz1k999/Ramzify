@@ -13,10 +13,3 @@ services:
       - key: WEBAPP_URL
         sync: false  # URL of your Static Site (Web App)
     healthCheckPath: /
-
-staticSites:
-  # Frontend Static Site
-  - name: ramzify-webapp
-    runtime: static
-    buildCommand: echo "Static site no build needed"
-    publishPath: ./webapp
