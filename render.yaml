@@ -9,14 +9,14 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: BOT_TOKEN
-        sync: false  # Установите в Render Dashboard
+        sync: false  # Set in Render Dashboard
       - key: WEBAPP_URL
-        sync: false  # URL вашего Static Site (Web App)
+        sync: false  # URL of your Static Site (Web App)
     healthCheckPath: /
 
+staticSites:
   # Frontend Static Site
-  - type: static
-    name: ramzify-webapp
+  - name: ramzify-webapp
     runtime: static
     buildCommand: echo "Static site no build needed"
-    staticPublishPath: ./webapp
+    publishPath: ./webapp
