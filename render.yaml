@@ -1,0 +1,22 @@
+services:
+  # Unified API & Bot Service
+  - type: web
+    name: ramzify-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: BOT_TOKEN
+        sync: false  # Установите в Render Dashboard
+      - key: WEBAPP_URL
+        sync: false  # URL вашего Static Site (Web App)
+    healthCheckPath: /
+
+  # Frontend Static Site
+  - type: static
+    name: ramzify-webapp
+    runtime: static
+    buildCommand: echo "Static site no build needed"
+    staticPublishPath: ./webapp

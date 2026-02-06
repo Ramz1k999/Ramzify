@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Search - Telegram Web App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #00ff41;
+            --neon-green-dark: #00cc33;
+            --neon-green-glow: rgba(0, 255, 65, 0.4);
+            --dark-bg: #0a0e0a;
+            --card-bg: #0f1410;
+            --card-hover: #141a14;
+            --border-color: #1a2e1a;
+            --text-primary: #e8ffe8;
+            --text-secondary: #7a9e7a;
+            --shadow-green: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        #root {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            position: relative;
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--neon-green);
+        }
+
+        .tab.active {
+            color: var(--neon-green);
+            border-bottom-color: var(--neon-green);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green-glow);
+            animation: tabGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes tabGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px var(--neon-green-glow);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--neon-green-glow);
+            }
+        }
+
+        .tab-content {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--neon-green) 0%, #66ff88 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: var(--shadow-green);
+            letter-spacing: -2px;
+            margin-bottom: 10px;
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 10px var(--neon-green-glow));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 25px var(--neon-green-glow));
+            }
+        }
+
+        .tagline {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 500;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 30px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-wrapper {
+            position: relative;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 50px 16px 20px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--neon-green);
+            box-shadow: var(--shadow-green), 0 0 0 4px rgba(0, 255, 65, 0.1);
+            background: var(--dark-bg);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--neon-green);
+            font-size: 20px;
+            pointer-events: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--neon-green) 0%, var(--neon-green-dark) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 16px 28px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--dark-bg);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--neon-green-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--neon-green-glow);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--neon-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results-grid {
+            display: grid;
+            gap: 16px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .track-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            gap: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .track-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .track-card:hover {
+            background: var(--card-hover);
+            border-color: var(--neon-green);
+            box-shadow: var(--shadow-green);
+            transform: translateY(-2px);
+        }
+
+        .track-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .track-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .track-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.4;
+        }
+
+        .track-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .track-channel {
+            font-weight: 500;
+            color: var(--neon-green);
+        }
+
+        .track-stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .track-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .btn-small {
+            background: var(--border-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--neon-green);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-small:hover {
+            background: var(--neon-green);
+            color: var(--dark-bg);
+            border-color: var(--neon-green);
+            box-shadow: 0 2px 10px var(--neon-green-glow);
+        }
+
+        .btn-small:active {
+            transform: scale(0.95);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-text {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .downloaded-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .downloaded-count {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            color: var(--neon-green);
+            font-weight: 600;
+        }
+
+        .btn-clear {
+            background: rgba(255, 50, 50, 0.1);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ff6b6b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-clear:hover {
+            background: rgba(255, 50, 50, 0.2);
+            border-color: #ff6b6b;
+            box-shadow: 0 2px 10px rgba(255, 50, 50, 0.3);
+        }
+
+        .btn-clear:active {
+            transform: scale(0.95);
+        }
+
+        .error-message {
+            background: rgba(255, 50, 50, 0.1);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+            text-align: center;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-green);
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 36px;
+            }
+
+            .track-card {
+                padding: 12px;
+                gap: 12px;
+            }
+
+            .thumbnail {
+                width: 80px;
+                height: 80px;
+            }
+
+            .track-title {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const API_URL = window.location.origin;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('search');
+            const [query, setQuery] = useState('');
+            const [results, setResults] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [downloading, setDownloading] = useState({});
+            const [downloadedSongs, setDownloadedSongs] = useState(() => {
+                const saved = localStorage.getItem('downloadedSongs');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            useEffect(() => {
+                if (window.Telegram?.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    tg.ready();
+                    tg.expand();
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const searchQuery = urlParams.get('q');
+                    if (searchQuery) {
+                        setQuery(searchQuery);
+                        handleSearch(searchQuery);
+                    }
+                }
+            }, []);
+
+            const handleSearch = async (searchQuery = query) => {
+                if (!searchQuery.trim()) return;
+
+                setLoading(true);
+                setError(null);
+                setResults([]);
+
+                try {
+                    const response = await fetch(`${API_URL}/api/search`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: searchQuery,
+                            max_results: 20
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('Ошибка поиска');
+
+                    const data = await response.json();
+                    setResults(data);
+                } catch (err) {
+                    setError('Не удалось выполнить поиск. Проверьте подключение.');
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleDownload = async (videoId, title, track = null) => {
+                setDownloading(prev => ({ ...prev, [videoId]: true }));
+
+                try {
+                    const response = await fetch(`${API_URL}/api/download`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            video_id: videoId,
+                            format: 'mp3'
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('Ошибка скачивания');
+
+                    const data = await response.json();
+
+                    const downloadUrl = `${API_URL}${data.download_url}`;
+                    window.open(downloadUrl, '_blank');
+
+                    // Save to downloaded songs
+                    if (track) {
+                        const newSong = {
+                            ...track,
+                            downloadedAt: new Date().toISOString()
+                        };
+                        const updated = [newSong, ...downloadedSongs.filter(s => s.id !== track.id)];
+                        setDownloadedSongs(updated);
+                        localStorage.setItem('downloadedSongs', JSON.stringify(updated));
+                    }
+
+                    if (window.Telegram?.WebApp) {
+                        window.Telegram.WebApp.showAlert('✅ Файл готов к скачиванию!');
+                    }
+                } catch (err) {
+                    if (window.Telegram?.WebApp) {
+                        window.Telegram.WebApp.showAlert('❌ Ошибка при скачивании');
+                    }
+                    console.error(err);
+                } finally {
+                    setDownloading(prev => ({ ...prev, [videoId]: false }));
+                }
+            };
+
+            const clearHistory = () => {
+                if (window.confirm('Очистить историю скачанных песен?')) {
+                    setDownloadedSongs([]);
+                    localStorage.removeItem('downloadedSongs');
+                }
+            };
+
+            const formatDuration = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const formatViews = (views) => {
+                if (!views) return 'N/A';
+                if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
+                if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
+                return views;
+            };
+
+            return (
+                <>
+                    <div className="header">
+                        <div className="logo">RAMZIFY</div>
+                        <div className="tagline">Music Search Engine</div>
+                    </div>
+
+                    <div className="tabs-container">
+                        <button
+                            className={`tab ${activeTab === 'search' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('search')}
+                        >
+                            🔍 Поиск
+                        </button>
+                        <button
+                            className={`tab ${activeTab === 'downloaded' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('downloaded')}
+                        >
+                            📥 Скачанные ({downloadedSongs.length})
+                        </button>
+                    </div>
+
+                    {activeTab === 'search' && (
+                        <div className="tab-content">
+                            <div className="search-container">
+                                <div className="search-wrapper">
+                                    <input
+                                        type="text"
+                                        className="search-input"
+                                        placeholder="Введите название песни или исполнителя..."
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                    />
+                                    <span className="search-icon">🔍</span>
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="error-message">
+                                    ⚠️ {error}
+                                </div>
+                            )}
+
+                            {loading && (
+                                <div className="loading">
+                                    <div className="spinner"></div>
+                                    <div style={{ color: 'var(--text-secondary)' }}>Поиск музыки...</div>
+                                </div>
+                            )}
+
+                            {!loading && results.length === 0 && !error && (
+                                <div className="empty-state">
+                                    <div className="empty-icon">🎵</div>
+                                    <div className="empty-text">Введите запрос для поиска музыки</div>
+                                </div>
+                            )}
+
+                            {!loading && results.length > 0 && (
+                                <div className="results-grid">
+                                    {results.map((track, index) => (
+                                        <div key={track.id} className="track-card" style={{ animationDelay: `${index * 0.05}s` }}>
+                                            <img
+                                                src={track.thumbnail}
+                                                alt={track.title}
+                                                className="thumbnail"
+                                            />
+                                            <div className="track-info">
+                                                <div className="track-title">{track.title}</div>
+                                                <div className="track-meta">
+                                                    <div className="track-channel">🎤 {track.channel}</div>
+                                                    <div className="track-stats">
+                                                        <div className="stat">
+                                                            ⏱️ {formatDuration(track.duration)}
+                                                        </div>
+                                                        <div className="stat">
+                                                            👁️ {formatViews(track.views)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="track-actions">
+                                                    <button
+                                                        className="btn-small"
+                                                        onClick={() => handleDownload(track.id, track.title, track)}
+                                                        disabled={downloading[track.id]}
+                                                    >
+                                                        {downloading[track.id] ? '⏳ Загрузка...' : '⬇️ Скачать'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'downloaded' && (
+                        <div className="tab-content">
+                            {downloadedSongs.length > 0 && (
+                                <div className="downloaded-header">
+                                    <div className="downloaded-count">
+                                        📥 {downloadedSongs.length} {downloadedSongs.length === 1 ? 'песня' : 'песен'}
+                                    </div>
+                                    <button className="btn-clear" onClick={clearHistory}>
+                                        🗑️ Очистить
+                                    </button>
+                                </div>
+                            )}
+
+                            {downloadedSongs.length === 0 ? (
+                                <div className="empty-state">
+                                    <div className="empty-icon">📥</div>
+                                    <div className="empty-text">Нет скачанных песен</div>
+                                </div>
+                            ) : (
+                                <div className="results-grid">
+                                    {downloadedSongs.map((track, index) => (
+                                        <div key={track.id} className="track-card" style={{ animationDelay: `${index * 0.05}s` }}>
+                                            <img
+                                                src={track.thumbnail}
+                                                alt={track.title}
+                                                className="thumbnail"
+                                            />
+                                            <div className="track-info">
+                                                <div className="track-title">{track.title}</div>
+                                                <div className="track-meta">
+                                                    <div className="track-channel">🎤 {track.channel}</div>
+                                                    <div className="track-stats">
+                                                        <div className="stat">
+                                                            ⏱️ {formatDuration(track.duration)}
+                                                        </div>
+                                                        <div className="stat">
+                                                            👁️ {formatViews(track.views)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="track-actions">
+                                                    <button
+                                                        className="btn-small"
+                                                        onClick={() => handleDownload(track.id, track.title, track)}
+                                                        disabled={downloading[track.id]}
+                                                    >
+                                                        {downloading[track.id] ? '⏳ Загрузка...' : '⬇️ Скачать снова'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>
